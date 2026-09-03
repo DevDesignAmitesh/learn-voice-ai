@@ -1,12 +1,16 @@
 {
   "name": "voice-ai",
   "module": "index.ts",
-  "type": "module",
-  "private": true,
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "mic": "^2.1.2",
+    "node-audiorecorder": "^3.0.0"
   }
 }
