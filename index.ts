@@ -1,7 +1,24 @@
 import fs from 'fs';
 import path from 'path';
-// @ts-ignore
 import AudioRecorder from 'node-audiorecorder'; // Import module
+import OpenAI from 'openai';
+import "dotenv/config"
+import { exec } from 'child_process';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegPath from '@ffmpeg-installer/ffmpeg';
+// import { createRequire } from 'module'
+// const require = createRequire(import.meta.url);
+
+// 1. Manually resolve and load the binary directly
+// Bun natively supports loading .node binaries via require
+// const binding = require('./node_modules/speaker/build/Release/binding.node');
+
+ffmpeg.setFfmpegPath(ffmpegPath.path);
+
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // 1. Configure the recording settings
 const options = {
@@ -46,7 +63,31 @@ fileStream.on('finish', () => {
 recordingStream.pipe(fileStream);
 
 // 5. Setup an automatic stop mechanism after 10 seconds
-setTimeout(() => {
+setTimeout(async () => {
   console.log('Recording stopped.');
   audioRecorder.stop();
+  await transcribe(fileName);
+  listen(fileName);
 }, 10 * 1000);
+
+
+async function transcribe(fileName: string) {
+  const transcription = await openai.audio.transcriptions.create({
+    file: fs.createReadStream(fileName),
+    model: 'whisper-1',
+  });
+
+  console.log(transcription.text);
+
+  return transcription.text;
+}
+
+function listen(filePath: string) {
+  // Plays only the audio track from the MP4 file
+  exec(`ffplay -nodisp -autoexit ${filePath}`, (err) => {
+    if (err) {
+      console.error('Error playing audio:', err);
+    }
+  });
+}
+
